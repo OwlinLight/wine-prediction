@@ -35,7 +35,21 @@ kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
 accuracies = []
 
 # ada_boost = SVC(C=1.2, gamma=0.9, kernel='rbf')
-ada_boost = RandomForestClassifier(random_state = 42)
+from sklearn.ensemble import GradientBoostingRegressor
+reg1 = GradientBoostingRegressor(random_state=1)
+
+from sklearn.ensemble import RandomForestRegressor
+reg2 = RandomForestRegressor(random_state=1)
+
+from sklearn.linear_model import LinearRegression
+reg3 = LinearRegression()
+
+from sklearn.ensemble import VotingRegressor
+regressor = VotingRegressor(estimators=[('gb', reg1), ('rf', reg2), ('lir', reg3)])
+
+ada_boost = regressor
+
+# ada_boost = RandomForestClassifier(random_state = 42)
 scaler = StandardScaler()
 
 X = X.to_numpy()
@@ -57,10 +71,11 @@ for fold, (train_indices, test_indices) in enumerate(kfold.split(X, y)):
     ada_boost.fit(X_train, y_train)
 
     # Make predictions on the testing set
-    y_pred = ada_boost.predict(X_test)
+    y_pred = ada_boost.predict(X_test).astype(int)
 
     # Calculate the accuracy of the classifier for this fold
     accuracy = accuracy_score(y_test, y_pred)
+    # accuracy = 1
 
     # Print the accuracy for this fold
     print("Fold {}: Accuracy: {:.2f}%".format(fold + 1, accuracy * 100))
@@ -80,6 +95,7 @@ X_test = test_data.drop(['Id'], axis=1)
 
 X_test = scaler.fit_transform(X_test)
 y_pred = ada_boost.predict(X_test)
+y_pred = np.rint(y_pred).astype(int)
 
 c1 = y_id.to_frame()
 c2 = pd.DataFrame({'quality': y_pred})
